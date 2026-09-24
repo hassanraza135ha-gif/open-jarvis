@@ -23,7 +23,13 @@ jobs:
           gradle-version: '8.2'
 
       - name: Build APK
-        run: ./gradlew assembleDebug --no-daemon -x test -Pkotlin.compiler.execution.strategy=in-process || gradle assembleDebug --no-daemon -x test -Pkotlin.compiler.execution.strategy=in-process
+        run: |
+          gradle assembleDebug --no-daemon --stacktrace --continue -x test 2>&1 | tee build_full.log
+          if [ ! -f app/build/outputs/apk/debug/*.apk ]; then
+            echo "=== FAILED COMPILATION LOGS ==="
+            grep -E "(e: |error: |FAILURE: )" build_full.log || tail -n 120 build_full.log
+            exit 1
+          fi
 
       - name: Upload APK
         if: success()
