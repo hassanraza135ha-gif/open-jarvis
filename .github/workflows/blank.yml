@@ -23,9 +23,23 @@ jobs:
           gradle-version: '8.2'
 
       - name: Build APK
-        run: gradle assembleDebug --no-daemon --stacktrace -x test
+        run: |
+          mkdir -p logs
+          gradle assembleDebug --no-daemon --info -x test > logs/build_output.txt 2>&1 || true
+          cat logs/build_output.txt | tail -n 120
+          if [ ! -f app/build/outputs/apk/debug/*.apk ]; then
+            exit 1
+          fi
+
+      - name: Upload Logs If Failed
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: logs/*.txt
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: open-jarvis-apk
